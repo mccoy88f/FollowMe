@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple camera-lens glyph, kept inside the adaptive icon safe zone. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 C69.46,28 82,40.54 82,56 C82,71.46 69.46,84 54,84 C38.54,84 26,71.46 26,56 C26,40.54 38.54,28 54,28 Z M54,36 C42.95,36 34,44.95 34,56 C34,67.05 42.95,76 54,76 C65.05,76 74,67.05 74,56 C74,44.95 65.05,36 54,36 Z" />
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M54,44 C60.63,44 66,49.37 66,56 C66,62.63 60.63,68 54,68 C47.37,68 42,62.63 42,56 C42,49.37 47.37,44 54,44 Z" />
+</vector>

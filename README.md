@@ -11,7 +11,9 @@ rivederle.
   `backend/README.md` per dettagli su endpoint e sviluppo locale)
 - `docker-compose.yml` — deploy su `fm.tabloza.live` tramite Coolify (vedi
   sotto)
-- App Android (fase 2/3, non ancora presente in questa repo)
+- `android/` — app Android Kotlin/Compose, ruolo di controllo remoto
+  (fase 2, vedi `android/README.md`); il ruolo videocamera è previsto
+  per la fase 3, nello stesso progetto
 
 ## Avvio rapido (sviluppo locale, senza Docker)
 
