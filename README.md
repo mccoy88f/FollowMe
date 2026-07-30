@@ -9,8 +9,8 @@ rivederle.
 
 - `backend/` — API Node.js/Fastify + PostgreSQL + WebSocket (fase 1, vedi
   `backend/README.md` per dettagli su endpoint e sviluppo locale)
-- `docker-compose.yml`, `nginx/` — deploy su `fm.tabloza.live` (vedi
-  `nginx/README.md` per la procedura completa, incluso certificato TLS)
+- `docker-compose.yml` — deploy su `fm.tabloza.live` tramite Coolify (vedi
+  sotto)
 - App Android (fase 2/3, non ancora presente in questa repo)
 
 ## Avvio rapido (sviluppo locale, senza Docker)
@@ -23,6 +23,25 @@ npm run migrate
 npm run dev
 ```
 
-## Deploy in produzione
+## Deploy in produzione (Coolify)
 
-Vedi `nginx/README.md`.
+Il `docker-compose.yml` e' pensato per essere deployato come risorsa
+"Docker Compose" in Coolify, che fornisce gia' il proprio reverse proxy
+(Traefik) con generazione/rinnovo automatico del certificato Let's
+Encrypt: **non serve un nginx/certbot separato**, anzi entrerebbe in
+conflitto con il proxy di Coolify sulle porte 80/443.
+
+1. Copia `backend/.env.example` in `backend/.env` e imposta i secret
+   (password Postgres, `JWT_*_SECRET` generati con `openssl rand -hex 64`)
+2. In Coolify, crea una nuova risorsa "Docker Compose" puntando a questo
+   repository/branch
+3. Imposta il dominio `fm.tabloza.live` per il servizio `backend` dalla UI
+   di Coolify (o direttamente nella variabile `SERVICE_FQDN_BACKEND_3000`
+   nel `docker-compose.yml`): Coolify/Traefik si occupano da soli di
+   ottenere e rinnovare il certificato TLS al deploy
+4. Deploy. Le migrazioni Postgres partono automaticamente all'avvio del
+   container backend (vedi `backend/docker-entrypoint.sh`)
+
+Le registrazioni sono salvate nel volume Docker `recordings` (montato in
+`/data/recordings` nel container backend), il database nel volume
+`pgdata`.

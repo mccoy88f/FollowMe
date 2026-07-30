@@ -20,37 +20,20 @@ services:
         condition: service_healthy
     volumes:
       - recordings:/data/recordings
-    # Not published directly to the host; nginx proxies to it. Uncomment
-    # for local debugging without going through nginx/TLS.
-    # ports:
-    #   - "3000:3000"
-
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot_www:/var/www/certbot:ro
-      - certbot_certs:/etc/letsencrypt:ro
-
-  # Run on-demand to obtain/renew the Let's Encrypt certificate, e.g.:
-  #   docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
-  #     -d fm.tabloza.live --email you@example.com --agree-tos --no-eff-email
-  # See nginx/README.md for the full first-time setup sequence.
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_certs:/etc/letsencrypt
-    entrypoint: ["sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h; done"]
+    # No `ports:` here on purpose: Coolify's built-in Traefik proxy reaches
+    # the container over its internal network and terminates TLS itself
+    # (Let's Encrypt), so nothing should publish 80/443 directly - a
+    # self-managed nginx/certbot would just conflict with it for those
+    # ports. Declaring SERVICE_FQDN_<SERVICE>_<PORT> is Coolify's "magic"
+    # env var convention: it tells Coolify's proxy to route that FQDN to
+    # this service on port 3000 and to obtain/renew the TLS cert
+    # automatically. Set the actual domain either by editing this value
+    # or, simpler, by setting the "Domain" for this service in the
+    # Coolify UI after first deploy (fm.tabloza.live) - Coolify then fills
+    # this variable in for you.
+    environment:
+      - SERVICE_FQDN_BACKEND_3000=https://fm.tabloza.live
 
 volumes:
   pgdata:
   recordings:
-  certbot_www:
-  certbot_certs:
