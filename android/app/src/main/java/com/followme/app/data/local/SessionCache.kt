@@ -12,10 +12,11 @@ import java.util.concurrent.atomic.AtomicReference
  * cache is populated from it once at startup and updated in lock-step
  * whenever a repository persists a change.
  */
-class SessionCache(initialServerUrl: String) {
+class SessionCache(initialServerUrl: String, initialDeviceToken: String? = null) {
     private val accessTokenRef = AtomicReference<String?>(null)
     private val refreshTokenRef = AtomicReference<String?>(null)
     private val serverUrlRef = AtomicReference(initialServerUrl)
+    private val deviceTokenRef = AtomicReference(initialDeviceToken)
 
     var accessToken: String?
         get() = accessTokenRef.get()
@@ -28,6 +29,11 @@ class SessionCache(initialServerUrl: String) {
     var serverUrl: String
         get() = serverUrlRef.get()
         set(value) = serverUrlRef.set(value)
+
+    /** Long-lived token for the camera role (this device acting as a remote camera), separate from the user [accessToken] used by the controller role. */
+    var deviceToken: String?
+        get() = deviceTokenRef.get()
+        set(value) = deviceTokenRef.set(value)
 
     fun setTokens(accessToken: String?, refreshToken: String?) {
         accessTokenRef.set(accessToken)

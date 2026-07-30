@@ -77,6 +77,7 @@ class NetworkModule(
     val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }
     val deviceApi: DeviceApi by lazy { retrofit.create(DeviceApi::class.java) }
     val recordingApi: RecordingApi by lazy { retrofit.create(RecordingApi::class.java) }
+    val deviceRecordingApi: DeviceRecordingApi by lazy { retrofit.create(DeviceRecordingApi::class.java) }
 
     companion object {
         private val PLACEHOLDER_BASE_URL = "http://followme.invalid/".toHttpUrl()

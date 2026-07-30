@@ -27,6 +27,11 @@ class TokenAuthenticator(
     override fun authenticate(route: Route?, response: Response): okhttp3.Request? {
         if (response.request.header(AuthApi.HEADER_SKIP_AUTH) != null) return null
         if (responseCount(response) >= 2) return null
+        // Device tokens (camera role) don't expire by time and have no
+        // refresh mechanism - a 401 there means the token was revoked, not
+        // that a refresh would help. Leave it to the caller (foreground
+        // service) to detect and report.
+        if (response.request.url.encodedPath.startsWith("/api/device/")) return null
 
         val refreshToken = sessionCache.refreshToken ?: run {
             authEventBus.notifyLoggedOut()

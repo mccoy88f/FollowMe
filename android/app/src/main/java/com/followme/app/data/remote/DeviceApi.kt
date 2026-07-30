@@ -6,11 +6,14 @@ import com.followme.app.data.remote.dto.CreateDeviceRequest
 import com.followme.app.data.remote.dto.CreateDeviceResponse
 import com.followme.app.data.remote.dto.DeviceListResponse
 import com.followme.app.data.remote.dto.OkResponse
+import com.followme.app.data.remote.dto.PairDeviceRequest
+import com.followme.app.data.remote.dto.PairDeviceResponse
 import com.followme.app.data.remote.dto.RegeneratePairingResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -32,4 +35,9 @@ interface DeviceApi {
         @Path("id") deviceId: String,
         @Body body: CommandRequest,
     ): Response<CommandResponse>
+
+    /** Called by the camera-role app instance itself: exchanges a short-lived pairing token for a long-lived device token. No user session required. */
+    @Headers("${AuthApi.HEADER_SKIP_AUTH}: true")
+    @POST("api/devices/pair")
+    suspend fun pairDevice(@Body body: PairDeviceRequest): Response<PairDeviceResponse>
 }

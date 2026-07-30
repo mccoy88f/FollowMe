@@ -10,6 +10,20 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Camera role (phase 3): recording audio/video and running the
+         always-on foreground service with its mandatory, always-visible
+         notification (see CameraForegroundService / project README on why
+         covert recording is out of scope). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+
     <application
         android:name=".FollowMeApp"
         android:allowBackup="true"
@@ -32,6 +46,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".camera.CameraForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="camera|microphone" />
     </application>
 
 </manifest>

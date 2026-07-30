@@ -4,10 +4,17 @@ import com.followme.app.data.local.SessionCache
 import okhttp3.Interceptor
 import okhttp3.Response
 
-/** Attaches the current access token as a Bearer header to every request,
- * except those explicitly marked with [AuthApi.HEADER_SKIP_AUTH] (login,
- * register, refresh, logout-all - endpoints that either need no auth or
- * authenticate via a refresh token in the body instead). */
+/**
+ * Attaches a Bearer token to every request, except those explicitly marked
+ * with [AuthApi.HEADER_SKIP_AUTH] (login, register, refresh, logout-all,
+ * device pairing - endpoints that either need no auth or authenticate via
+ * a token in the body instead).
+ *
+ * Requests to `api/device/*` (the camera role's own recording-upload API)
+ * use [SessionCache.deviceToken] instead of the controller role's
+ * [SessionCache.accessToken] - both can be populated in the same process
+ * since a single app build supports either role.
+ */
 class AuthHeaderInterceptor(private val sessionCache: SessionCache) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
@@ -17,9 +24,11 @@ class AuthHeaderInterceptor(private val sessionCache: SessionCache) : Intercepto
             return chain.proceed(stripped)
         }
 
-        val accessToken = sessionCache.accessToken
-        val authorized = if (accessToken != null) {
-            original.newBuilder().addHeader("Authorization", "Bearer $accessToken").build()
+        val isDeviceEndpoint = original.url.encodedPath.startsWith("/api/device/")
+        val token = if (isDeviceEndpoint) sessionCache.deviceToken else sessionCache.accessToken
+
+        val authorized = if (token != null) {
+            original.newBuilder().addHeader("Authorization", "Bearer $token").build()
         } else {
             original
         }

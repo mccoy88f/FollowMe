@@ -41,3 +41,9 @@ data class CommandRequest(val action: String, val type: String? = null)
 
 @Serializable
 data class CommandResponse(val delivered: Boolean, val reason: String? = null)
+
+@Serializable
+data class PairDeviceRequest(val pairingToken: String)
+
+@Serializable
+data class PairDeviceResponse(val deviceToken: String, val deviceId: String, val name: String)

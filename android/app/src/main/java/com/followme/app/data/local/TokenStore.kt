@@ -18,6 +18,10 @@ class TokenStore(private val context: Context) {
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         val SERVER_URL = stringPreferencesKey("server_url")
+        val APP_ROLE = stringPreferencesKey("app_role")
+        val DEVICE_TOKEN = stringPreferencesKey("device_token")
+        val DEVICE_ID = stringPreferencesKey("device_id")
+        val DEVICE_NAME = stringPreferencesKey("device_name")
     }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { it[Keys.ACCESS_TOKEN] }
@@ -25,9 +29,39 @@ class TokenStore(private val context: Context) {
     val serverUrl: Flow<String> =
         context.dataStore.data.map { it[Keys.SERVER_URL] ?: BuildConfig.DEFAULT_SERVER_URL }
 
+    /** "controller" or "camera"; null until the user picks one on first launch. */
+    val appRole: Flow<String?> = context.dataStore.data.map { it[Keys.APP_ROLE] }
+    val deviceToken: Flow<String?> = context.dataStore.data.map { it[Keys.DEVICE_TOKEN] }
+    val deviceId: Flow<String?> = context.dataStore.data.map { it[Keys.DEVICE_ID] }
+    val deviceName: Flow<String?> = context.dataStore.data.map { it[Keys.DEVICE_NAME] }
+
     suspend fun currentAccessToken(): String? = accessToken.first()
     suspend fun currentRefreshToken(): String? = refreshToken.first()
     suspend fun currentServerUrl(): String = serverUrl.first()
+    suspend fun currentAppRole(): String? = appRole.first()
+    suspend fun currentDeviceToken(): String? = deviceToken.first()
+    suspend fun currentDeviceId(): String? = deviceId.first()
+    suspend fun currentDeviceName(): String? = deviceName.first()
+
+    suspend fun saveAppRole(role: String) {
+        context.dataStore.edit { it[Keys.APP_ROLE] = role }
+    }
+
+    suspend fun saveDeviceSession(deviceToken: String, deviceId: String, deviceName: String) {
+        context.dataStore.edit {
+            it[Keys.DEVICE_TOKEN] = deviceToken
+            it[Keys.DEVICE_ID] = deviceId
+            it[Keys.DEVICE_NAME] = deviceName
+        }
+    }
+
+    suspend fun clearDeviceSession() {
+        context.dataStore.edit {
+            it.remove(Keys.DEVICE_TOKEN)
+            it.remove(Keys.DEVICE_ID)
+            it.remove(Keys.DEVICE_NAME)
+        }
+    }
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         context.dataStore.edit {

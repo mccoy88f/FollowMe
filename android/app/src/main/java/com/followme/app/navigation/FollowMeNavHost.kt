@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +15,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.followme.app.AppContainer
+import com.followme.app.data.repository.AppRole
+import com.followme.app.ui.camera.CameraHomeScreen
+import com.followme.app.ui.camera.CameraPairingScreen
 import com.followme.app.ui.devicedetail.DeviceDetailScreen
 import com.followme.app.ui.devices.AddDeviceScreen
 import com.followme.app.ui.devices.DeviceListScreen
@@ -24,10 +25,13 @@ import com.followme.app.ui.login.LoginScreen
 import com.followme.app.ui.recordings.RecordingListScreen
 import com.followme.app.ui.recordings.RecordingPlayerScreen
 import com.followme.app.ui.register.RegisterScreen
+import com.followme.app.ui.role.RoleSelectionScreen
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private object Routes {
     const val SPLASH = "splash"
+    const val ROLE_SELECTION = "role_selection"
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val DEVICES = "devices"
@@ -35,6 +39,8 @@ private object Routes {
     const val DEVICE_DETAIL = "device_detail/{deviceId}/{deviceName}"
     const val RECORDINGS = "recordings/{deviceId}/{deviceName}"
     const val PLAYER = "player/{recordingId}/{type}"
+    const val CAMERA_PAIRING = "camera_pairing"
+    const val CAMERA_HOME = "camera_home"
 
     fun deviceDetail(deviceId: String, deviceName: String) = "device_detail/$deviceId/${Uri.encode(deviceName)}"
     fun recordings(deviceId: String, deviceName: String) = "recordings/$deviceId/${Uri.encode(deviceName)}"
@@ -56,21 +62,62 @@ fun FollowMeNavHost(container: AppContainer) {
 
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) {
-            val isLoggedIn by container.authRepository.isLoggedIn.collectAsState(initial = null)
-            LaunchedEffect(isLoggedIn) {
-                when (isLoggedIn) {
-                    true -> navController.navigate(Routes.DEVICES) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+            LaunchedEffect(Unit) {
+                val destination = when (container.cameraSessionRepository.appRole.first()) {
+                    null -> Routes.ROLE_SELECTION
+                    AppRole.CONTROLLER.value -> {
+                        if (container.authRepository.isLoggedIn.first()) Routes.DEVICES else Routes.LOGIN
                     }
-                    false -> navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    AppRole.CAMERA.value -> {
+                        if (container.cameraSessionRepository.deviceSession.first() != null) {
+                            Routes.CAMERA_HOME
+                        } else {
+                            Routes.CAMERA_PAIRING
+                        }
                     }
-                    null -> Unit
+                    else -> Routes.ROLE_SELECTION
+                }
+                navController.navigate(destination) {
+                    popUpTo(Routes.SPLASH) { inclusive = true }
                 }
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
+        }
+
+        composable(Routes.ROLE_SELECTION) {
+            RoleSelectionScreen(
+                cameraSessionRepository = container.cameraSessionRepository,
+                onRoleChosen = { role ->
+                    val destination = if (role == AppRole.CONTROLLER) Routes.LOGIN else Routes.CAMERA_PAIRING
+                    navController.navigate(destination) {
+                        popUpTo(Routes.ROLE_SELECTION) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(Routes.CAMERA_PAIRING) {
+            CameraPairingScreen(
+                cameraSessionRepository = container.cameraSessionRepository,
+                onPaired = {
+                    navController.navigate(Routes.CAMERA_HOME) {
+                        popUpTo(Routes.CAMERA_PAIRING) { inclusive = true }
+                    }
+                },
+            )
+        }
+
+        composable(Routes.CAMERA_HOME) {
+            CameraHomeScreen(
+                cameraSessionRepository = container.cameraSessionRepository,
+                onUnpaired = {
+                    navController.navigate(Routes.CAMERA_PAIRING) {
+                        popUpTo(Routes.CAMERA_HOME) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable(Routes.LOGIN) {
