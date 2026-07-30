@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-followme} -d ${POSTGRES_DB:-followme}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - recordings:/data/recordings
+    # Not published directly to the host; nginx proxies to it. Uncomment
+    # for local debugging without going through nginx/TLS.
+    # ports:
+    #   - "3000:3000"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+
+  # Run on-demand to obtain/renew the Let's Encrypt certificate, e.g.:
+  #   docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+  #     -d fm.tabloza.live --email you@example.com --agree-tos --no-eff-email
+  # See nginx/README.md for the full first-time setup sequence.
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    entrypoint: ["sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h; done"]
+
+volumes:
+  pgdata:
+  recordings:
+  certbot_www:
+  certbot_certs:
