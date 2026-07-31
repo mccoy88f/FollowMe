@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-followme}
       POSTGRES_DB: ${POSTGRES_DB:-followme}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_v2:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-followme} -d $${POSTGRES_DB:-followme}"]
       interval: 5s
@@ -38,5 +38,5 @@ services:
       - recordings:/data/recordings
 
 volumes:
-  pgdata:
+  pgdata_v2:
   recordings:
