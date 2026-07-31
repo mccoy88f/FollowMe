@@ -98,6 +98,7 @@ fun DeviceListScreen(
                         items(uiState.devices, key = { it.id }) { device ->
                             DeviceRow(
                                 device = device,
+                                recordingState = uiState.activeRecordings[device.id],
                                 onClick = { onDeviceClick(device.id, device.name) },
                             )
                             Spacer(modifier = Modifier.padding(top = 8.dp))
@@ -110,7 +111,8 @@ fun DeviceListScreen(
 }
 
 @Composable
-private fun DeviceRow(device: DeviceDto, onClick: () -> Unit) {
+private fun DeviceRow(device: DeviceDto, recordingState: String?, onClick: () -> Unit) {
+    val isRecording = recordingState == "recording_started"
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -120,17 +122,30 @@ private fun DeviceRow(device: DeviceDto, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(12.dp)
                     .background(
-                        color = if (device.online) OnlineGreen else OfflineGray,
+                        color = if (isRecording) com.followme.app.ui.theme.RecordingRed else if (device.online) OnlineGreen else OfflineGray,
                         shape = CircleShape,
                     )
             )
             Spacer(modifier = Modifier.padding(start = 12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = device.name, style = MaterialTheme.typography.titleMedium)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = device.name, style = MaterialTheme.typography.titleMedium)
+                    if (isRecording) {
+                        Text(
+                            text = "🔴 IN REGISTRAZIONE",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = com.followme.app.ui.theme.RecordingRed
+                        )
+                    }
+                }
                 Text(
-                    text = if (device.online) "Online" else "Ultima connessione: ${formatTimestamp(device.lastSeenAt, "mai")}",
+                    text = if (isRecording) "Registrazione in corso sul dispositivo" else if (device.online) "Online" else "Ultima connessione: ${formatTimestamp(device.lastSeenAt, "mai")}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isRecording) com.followme.app.ui.theme.RecordingRed else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

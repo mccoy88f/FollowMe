@@ -17,12 +17,17 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.followme.app.data.repository.DeviceRepository
 import com.followme.app.ui.GenericViewModelFactory
 import com.followme.app.ui.common.formatTimestamp
+import com.followme.app.ui.common.generateQrCodeBitmap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,17 +95,36 @@ fun AddDeviceScreen(
                 Text(text = "Dispositivo \"${created.deviceName}\" creato", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Apri FollowMe sul telefono da usare come videocamera e inserisci questo codice quando richiesto.",
+                    text = "Inquadra il QR Code oppure inserisci manualmente il codice nell'app videocamera.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+
+                val qrBitmap = remember(created.pairingToken) {
+                    val payload = """{"code":"${created.pairingToken}"}"""
+                    com.followme.app.ui.common.generateQrCodeBitmap(payload, 400, 400)
+                }
+
+                if (qrBitmap != null) {
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 12.dp)
+                    ) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR Code associazione",
+                            modifier = Modifier.padding(16.dp).clip(RoundedCornerShape(8.dp))
+                        )
+                    }
+                }
 
                 Card(modifier = Modifier.fillMaxWidth()) {
                     SelectionContainer {
                         Text(
                             text = created.pairingToken,
                             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
                             textAlign = TextAlign.Center,
                         )
                     }

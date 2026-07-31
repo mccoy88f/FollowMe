@@ -24,7 +24,8 @@ class DeviceRecordingRepository(private val deviceRecordingApi: DeviceRecordingA
 
         val chunkResult = withContext(Dispatchers.IO) {
             apiCall {
-                val body = file.asRequestBody(mimeType.toMediaType())
+                val mediaType = (if (mimeType.isNotBlank()) mimeType else "application/octet-stream").toMediaType()
+                val body = file.asRequestBody(mediaType)
                 deviceRecordingApi.uploadChunk(recordingId, body)
             }
         }

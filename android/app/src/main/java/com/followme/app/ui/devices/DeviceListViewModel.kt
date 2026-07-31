@@ -15,6 +15,7 @@ data class DeviceListUiState(
     val devices: List<DeviceDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val activeRecordings: Map<String, String> = emptyMap(),
 )
 
 class DeviceListViewModel(private val deviceRepository: DeviceRepository) : ViewModel() {
@@ -32,6 +33,20 @@ class DeviceListViewModel(private val deviceRepository: DeviceRepository) : View
                             if (device.id == event.deviceId) device.copy(online = event.online) else device
                         }
                     )
+                }
+            }
+        }
+        viewModelScope.launch {
+            deviceRepository.recordingStatusEvents.collect { event ->
+                _uiState.update { state ->
+                    val updated = state.activeRecordings.toMutableMap()
+                    val recState = event.state
+                    if (recState == null || recState == "recording_stopped") {
+                        updated.remove(event.deviceId)
+                    } else {
+                        updated[event.deviceId] = recState
+                    }
+                    state.copy(activeRecordings = updated)
                 }
             }
         }
