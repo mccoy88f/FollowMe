@@ -33,8 +33,11 @@ Il `docker-compose.yml` e' pensato per essere deployato come risorsa
 Encrypt: **non serve un nginx/certbot separato**, anzi entrerebbe in
 conflitto con il proxy di Coolify sulle porte 80/443.
 
-1. Copia `backend/.env.example` in `backend/.env` e imposta i secret
-   (password Postgres, `JWT_*_SECRET` generati con `openssl rand -hex 64`)
+1. Copia `backend/.env.example` in `backend/.env` e imposta i secret nelle variabili d'ambiente (in Coolify o nel file `.env`):
+   - `POSTGRES_PASSWORD` (password del database PostgreSQL)
+   - `JWT_ACCESS_SECRET` (generata con `openssl rand -hex 64`)
+   - `JWT_REFRESH_SECRET` (generata con `openssl rand -hex 64`)
+   - `JWT_DEVICE_SECRET` (generata con `openssl rand -hex 64`)
 2. In Coolify, crea una nuova risorsa "Docker Compose" puntando a questo
    repository/branch
 3. Imposta il dominio `fm.tabloza.live` per il servizio `backend` dalla UI

@@ -20,7 +20,7 @@ export const env = {
   publicUrl: process.env.PUBLIC_URL ?? 'http://localhost:3000',
 
   postgres: {
-    host: required('POSTGRES_HOST', 'localhost'),
+    host: required('POSTGRES_HOST', process.env.NODE_ENV === 'production' ? 'postgres' : 'localhost'),
     port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
     database: required('POSTGRES_DB', 'followme'),
     user: required('POSTGRES_USER', 'followme'),
