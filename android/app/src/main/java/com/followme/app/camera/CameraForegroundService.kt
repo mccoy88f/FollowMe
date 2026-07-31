@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.followme.app.AppContainer
 import com.followme.app.FollowMeApp
 import com.followme.app.data.socket.DeviceCommand
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -144,6 +145,8 @@ class CameraForegroundService : LifecycleService() {
 
         try {
             engine.prepare()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             container.deviceSocketClient.emitStatus("error", mapOf("message" to (e.message ?: "prepare failed")))
             _state.value = _state.value.copy(lastError = e.message)
@@ -154,28 +157,43 @@ class CameraForegroundService : LifecycleService() {
         container.deviceSocketClient.emitStatus("recording_started")
         updateNotification("Registrazione in corso")
 
-        val recordingsDir = File(getExternalFilesDir(null), "recordings").apply { mkdirs() }
+        // getExternalFilesDir can return null if shared storage is briefly
+        // unavailable; fall back to internal storage rather than crash.
+        val baseDir = getExternalFilesDir(null) ?: filesDir
+        val recordingsDir = File(baseDir, "recordings").apply { mkdirs() }
 
         try {
             while (!stopRequested.value) {
                 val fileName = "${SEGMENT_DATE_FORMAT.format(Date())}.${engine.fileExtension}"
                 val segmentFile = File(recordingsDir, fileName)
 
-                engine.startSegment(segmentFile)
-                withTimeoutOrNull(SEGMENT_DURATION_MS) {
-                    stopRequested.filter { it }.first()
-                }
-                val durationSeconds = engine.stopSegment()
-
-                if (segmentFile.exists() && segmentFile.length() > 0) {
-                    lifecycleScope.launch {
-                        container.deviceRecordingRepository.uploadSegment(
-                            file = segmentFile,
-                            type = engine.recordingType,
-                            mimeType = engine.mimeType,
-                            durationSeconds = durationSeconds,
-                        )
+                try {
+                    engine.startSegment(segmentFile)
+                    withTimeoutOrNull(SEGMENT_DURATION_MS) {
+                        stopRequested.filter { it }.first()
                     }
+                    val durationSeconds = engine.stopSegment()
+
+                    if (segmentFile.exists() && segmentFile.length() > 0) {
+                        lifecycleScope.launch {
+                            container.deviceRecordingRepository.uploadSegment(
+                                file = segmentFile,
+                                type = engine.recordingType,
+                                mimeType = engine.mimeType,
+                                durationSeconds = durationSeconds,
+                            )
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // A single failed segment (e.g. disk full, camera error)
+                    // ends the loop cleanly instead of crashing the service -
+                    // an always-on background component must never let a
+                    // transient recording error take the whole process down.
+                    container.deviceSocketClient.emitStatus("error", mapOf("message" to (e.message ?: "recording failed")))
+                    _state.value = _state.value.copy(lastError = e.message)
+                    break
                 }
             }
         } finally {

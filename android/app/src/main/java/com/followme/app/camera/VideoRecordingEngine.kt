@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlin.coroutines.resume
 
@@ -86,7 +87,10 @@ class VideoRecordingEngine(
     override suspend fun stopSegment(): Int {
         val durationSeconds = ((System.currentTimeMillis() - startTimeMs) / 1000).toInt()
         activeRecording?.stop()
-        finalizeDeferred?.await()
+        // Bounded wait: if CameraX never delivers the Finalize event (e.g. a
+        // camera driver failure), don't hang the recording loop forever -
+        // move on and let the next segment attempt surface the problem.
+        withTimeoutOrNull(FINALIZE_TIMEOUT_MS) { finalizeDeferred?.await() }
         activeRecording = null
         finalizeDeferred = null
         return durationSeconds
@@ -98,5 +102,9 @@ class VideoRecordingEngine(
         cameraProvider?.unbindAll()
         cameraProvider = null
         videoCapture = null
+    }
+
+    companion object {
+        private const val FINALIZE_TIMEOUT_MS = 5_000L
     }
 }

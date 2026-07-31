@@ -63,6 +63,17 @@ fun DeviceDetailScreen(
                 .padding(padding)
                 .padding(24.dp),
         ) {
+            uiState.recordingState?.let { state ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Stato dispositivo: ${recordingStateLabel(state)}",
+                        color = if (state == "error") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             Text(text = "Avvia registrazione", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -119,4 +130,11 @@ fun DeviceDetailScreen(
             }
         }
     }
+}
+
+private fun recordingStateLabel(state: String): String = when (state) {
+    "recording_started" -> "In registrazione"
+    "recording_stopped" -> "Registrazione ferma"
+    "error" -> "Errore sul dispositivo"
+    else -> state
 }
