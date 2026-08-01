@@ -10,6 +10,7 @@ data class DeviceDto(
     val paired: Boolean,
     val status: String,
     val online: Boolean,
+    val recording: Boolean = false,
     @SerialName("last_seen_at") val lastSeenAt: String? = null,
     @SerialName("created_at") val createdAt: String,
 )

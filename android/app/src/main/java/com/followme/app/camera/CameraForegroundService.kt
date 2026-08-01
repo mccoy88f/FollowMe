@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
@@ -51,6 +52,14 @@ class CameraForegroundService : LifecycleService() {
     private var recordingJob: Job? = null
     private val stopRequested = MutableStateFlow(false)
 
+    // A foreground service alone does not keep the CPU awake once the
+    // screen turns off - without this, recording (and the WebSocket
+    // connection needed to even receive commands) can stall as soon as the
+    // device goes to standby. Renewed periodically on each heartbeat tick
+    // instead of held with no timeout, so a bug here can't drain the
+    // battery indefinitely if release() is ever missed.
+    private var wakeLock: PowerManager.WakeLock? = null
+
     override fun onCreate() {
         super.onCreate()
         container = (application as FollowMeApp).container
@@ -85,6 +94,7 @@ class CameraForegroundService : LifecycleService() {
         if (_state.value.running) return // already started (e.g. duplicate start command)
         _state.value = _state.value.copy(running = true)
 
+        acquireWakeLock()
         container.deviceSocketClient.connect()
 
         lifecycleScope.launch {
@@ -99,8 +109,22 @@ class CameraForegroundService : LifecycleService() {
             while (true) {
                 delay(HEARTBEAT_INTERVAL_MS)
                 container.deviceSocketClient.emitHeartbeat()
+                acquireWakeLock() // renew before the previous timeout would expire
             }
         }
+    }
+
+    private fun acquireWakeLock() {
+        val lock = wakeLock ?: getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FollowMe:cameraRecording")
+            .apply { setReferenceCounted(false) }
+            .also { wakeLock = it }
+        lock.acquire(WAKE_LOCK_TIMEOUT_MS)
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
     }
 
     private fun handleCommand(command: DeviceCommand) {
@@ -212,6 +236,7 @@ class CameraForegroundService : LifecycleService() {
     private fun stopSelfService() {
         stopRequested.value = true
         container.deviceSocketClient.disconnect()
+        releaseWakeLock()
         _state.value = CameraServiceState()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -219,14 +244,26 @@ class CameraForegroundService : LifecycleService() {
 
     override fun onDestroy() {
         container.deviceSocketClient.disconnect()
+        releaseWakeLock()
         _state.value = CameraServiceState()
         super.onDestroy()
+    }
+
+    // Deliberately does nothing beyond the default: a started foreground
+    // service is independent of the launching Activity's task, so swiping
+    // FollowMe away from Recents must not stop the camera. Overridden
+    // explicitly (rather than left to the inherited default) so that stays
+    // true regardless of what LifecycleService's own implementation does.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
     }
 
     companion object {
         private const val ACTION_STOP = "com.followme.app.camera.STOP"
         private const val SEGMENT_DURATION_MS = 30_000L
         private const val HEARTBEAT_INTERVAL_MS = 25_000L
+        // Must be comfortably longer than HEARTBEAT_INTERVAL_MS, which renews it.
+        private const val WAKE_LOCK_TIMEOUT_MS = 5 * 60_000L
         private val SEGMENT_DATE_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
 
         private val _state = MutableStateFlow(CameraServiceState())

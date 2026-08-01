@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
 import { authenticateUser } from '../middleware/authenticate';
 import { signDeviceToken } from '../services/token.service';
-import { isDeviceOnline, sendCommandToDevice } from '../ws/registry';
+import { isDeviceOnline, isDeviceRecording, sendCommandToDevice } from '../ws/registry';
 import type { DeviceRecord } from '../types';
 
 const PAIRING_TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
@@ -20,7 +20,11 @@ export default async function deviceRoutes(app: FastifyInstance): Promise<void> 
     const devices = await db<DeviceRecord>('devices')
       .where({ user_id: req.userId })
       .select('id', 'name', 'paired', 'status', 'last_seen_at', 'created_at');
-    const withPresence = devices.map((d) => ({ ...d, online: isDeviceOnline(d.id) }));
+    const withPresence = devices.map((d) => ({
+      ...d,
+      online: isDeviceOnline(d.id),
+      recording: isDeviceRecording(d.id),
+    }));
     return reply.send({ devices: withPresence });
   });
 

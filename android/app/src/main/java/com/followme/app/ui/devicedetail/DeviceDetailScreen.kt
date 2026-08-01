@@ -63,16 +63,16 @@ fun DeviceDetailScreen(
                 .padding(padding)
                 .padding(24.dp),
         ) {
-            uiState.recordingState?.let { state ->
-                Card(modifier = Modifier.fillMaxWidth()) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "Connessione: ${onlineLabel(uiState.online)}")
                     Text(
-                        text = "Stato dispositivo: ${recordingStateLabel(state)}",
-                        color = if (state == "error") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(16.dp),
+                        text = "Registrazione: ${uiState.recordingState?.let { recordingStateLabel(it) } ?: "sconosciuto"}",
+                        color = if (uiState.recordingState == "error") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
             }
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(text = "Avvia registrazione", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
@@ -133,8 +133,14 @@ fun DeviceDetailScreen(
 }
 
 private fun recordingStateLabel(state: String): String = when (state) {
-    "recording_started" -> "In registrazione"
-    "recording_stopped" -> "Registrazione ferma"
-    "error" -> "Errore sul dispositivo"
+    "recording_started" -> "in corso"
+    "recording_stopped" -> "ferma"
+    "error" -> "errore sul dispositivo"
     else -> state
+}
+
+private fun onlineLabel(online: Boolean?): String = when (online) {
+    true -> "online"
+    false -> "offline"
+    null -> "sconosciuto"
 }

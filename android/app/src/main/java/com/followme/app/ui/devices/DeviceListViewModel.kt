@@ -35,6 +35,18 @@ class DeviceListViewModel(private val deviceRepository: DeviceRepository) : View
                 }
             }
         }
+        viewModelScope.launch {
+            deviceRepository.recordingStatusEvents.collect { event ->
+                val recording = event.state == "recording_started"
+                _uiState.update { state ->
+                    state.copy(
+                        devices = state.devices.map { device ->
+                            if (device.id == event.deviceId) device.copy(recording = recording) else device
+                        }
+                    )
+                }
+            }
+        }
     }
 
     fun loadDevices() {

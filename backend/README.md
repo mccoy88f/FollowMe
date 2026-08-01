@@ -65,7 +65,12 @@ Firebase reale: da completare in fase 3 insieme all'app camera.
 
 Autenticate come utente (`Authorization: Bearer <accessToken>`):
 
-- `GET /api/devices` — lista dispositivi con stato online/offline
+- `GET /api/devices` — lista dispositivi con stato online/offline e
+  `recording` (booleano, ultimo stato noto lato server: true tra un evento
+  `recording_started` e il successivo `recording_stopped`/`error`, azzerato
+  alla disconnessione del device) - così un controller che apre/aggiorna la
+  lista sa subito se un dispositivo sta registrando, senza dover aspettare
+  il prossimo evento WebSocket
 - `POST /api/devices` `{name}` — crea dispositivo + pairing token
 - `POST /api/devices/:id/regenerate-pairing-token` — nuovo pairing token
 - `DELETE /api/devices/:id`

@@ -41,6 +41,7 @@ import com.followme.app.ui.GenericViewModelFactory
 import com.followme.app.ui.common.formatTimestamp
 import com.followme.app.ui.theme.OfflineGray
 import com.followme.app.ui.theme.OnlineGreen
+import com.followme.app.ui.theme.RecordingRed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,6 +133,13 @@ private fun DeviceRow(device: DeviceDto, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (device.recording) {
+                    Text(
+                        text = "● Registrazione in corso",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = RecordingRed,
+                    )
+                }
             }
         }
     }

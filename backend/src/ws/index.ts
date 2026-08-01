@@ -9,6 +9,7 @@ import {
   registerUserSocket,
   unregisterUserSocket,
   broadcastToUser,
+  setDeviceRecording,
 } from './registry';
 
 interface HandshakeAuth {
@@ -72,6 +73,12 @@ async function handleDeviceConnection(socket: Socket, token?: string): Promise<v
   broadcastToUser(device.user_id, 'device_status', { deviceId, status: 'online' });
 
   socket.on('status', (payload: unknown) => {
+    const state = (payload as { state?: unknown } | null)?.state;
+    if (state === 'recording_started') {
+      setDeviceRecording(deviceId, true);
+    } else if (state === 'recording_stopped' || state === 'error') {
+      setDeviceRecording(deviceId, false);
+    }
     broadcastToUser(device.user_id, 'device_recording_status', { deviceId, ...(payload as object) });
   });
 

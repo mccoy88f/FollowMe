@@ -15,6 +15,9 @@ data class DeviceDetailUiState(
     val isSending: Boolean = false,
     val message: String? = null,
     val isError: Boolean = false,
+    // null = not known yet (initial fetch still in flight or failed); once
+    // set, kept up to date live via the WebSocket events collected below.
+    val online: Boolean? = null,
     val recordingState: String? = null,
 )
 
@@ -27,6 +30,34 @@ class DeviceDetailViewModel(
     val uiState: StateFlow<DeviceDetailUiState> = _uiState.asStateFlow()
 
     init {
+        // Seed current state on open: the WebSocket only pushes *changes*, so
+        // without an initial fetch this screen would show nothing until the
+        // next event happens to arrive - leaving "is it recording right now"
+        // genuinely unanswerable if you open it cold.
+        viewModelScope.launch {
+            when (val result = deviceRepository.listDevices()) {
+                is ApiResult.Success -> {
+                    result.data.find { it.id == deviceId }?.let { device ->
+                        _uiState.update {
+                            it.copy(
+                                online = device.online,
+                                recordingState = if (device.recording) "recording_started" else "recording_stopped",
+                            )
+                        }
+                    }
+                }
+                is ApiResult.Failure -> Unit // leave online/recordingState as "unknown" (null)
+            }
+        }
+
+        viewModelScope.launch {
+            deviceRepository.deviceStatusEvents.collect { event ->
+                if (event.deviceId == deviceId) {
+                    _uiState.update { it.copy(online = event.online) }
+                }
+            }
+        }
+
         viewModelScope.launch {
             deviceRepository.recordingStatusEvents.collect { event ->
                 if (event.deviceId == deviceId) {
