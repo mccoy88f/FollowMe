@@ -121,25 +121,35 @@ private fun DeviceRow(device: DeviceDto, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(12.dp)
                     .background(
-                        color = if (device.online) OnlineGreen else OfflineGray,
+                        color = if (device.recording) RecordingRed else if (device.online) OnlineGreen else OfflineGray,
                         shape = CircleShape,
                     )
             )
             Spacer(modifier = Modifier.padding(start = 12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = device.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = if (device.online) "Online" else "Ultima connessione: ${formatTimestamp(device.lastSeenAt, "mai")}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (device.recording) {
-                    Text(
-                        text = "● Registrazione in corso",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = RecordingRed,
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = device.name, style = MaterialTheme.typography.titleMedium)
+                    if (device.recording) {
+                        Text(
+                            text = "🔴 IN REGISTRAZIONE",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = RecordingRed,
+                        )
+                    }
                 }
+                Text(
+                    text = when {
+                        device.recording -> "Registrazione in corso"
+                        device.online -> "Online"
+                        else -> "Ultima connessione: ${formatTimestamp(device.lastSeenAt, "mai")}"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (device.recording) RecordingRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

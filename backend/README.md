@@ -83,8 +83,10 @@ Autenticate come utente (`Authorization: Bearer <accessToken>`):
 Autenticate come dispositivo (`Authorization: Bearer <deviceToken>`):
 
 - `POST /api/device/recordings` `{type}` -> `{recordingId}`
-- `POST /api/device/recordings/:id/chunk` — body `application/octet-stream`,
-  bytes grezzi appesi in ordine al file della registrazione
+- `POST /api/device/recordings/:id/chunk` — body binario grezzo, appeso in
+  ordine al file della registrazione. Content-Type accettato:
+  `application/octet-stream` oppure `audio/*`/`video/*` (l'app camera invia
+  il mime type reale del segmento, es. `video/mp4`, `audio/aac`)
 - `POST /api/device/recordings/:id/complete` `{durationSeconds?}`
 - `POST /api/device/recordings/:id/fail`
 

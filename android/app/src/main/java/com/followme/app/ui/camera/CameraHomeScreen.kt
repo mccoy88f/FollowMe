@@ -48,6 +48,8 @@ import com.followme.app.ui.theme.OfflineGray
 import com.followme.app.ui.theme.OnlineGreen
 import com.followme.app.ui.theme.RecordingRed
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+
 private val requiredPermissions: Array<String>
     get() = buildList {
         add(Manifest.permission.CAMERA)
@@ -57,6 +59,7 @@ private val requiredPermissions: Array<String>
         }
     }.toTypedArray()
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraHomeScreen(
     cameraSessionRepository: CameraSessionRepository,

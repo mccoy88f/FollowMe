@@ -10,7 +10,7 @@ import okhttp3.Response
  * device pairing - endpoints that either need no auth or authenticate via
  * a token in the body instead).
  *
- * Requests to `api/device/*` (the camera role's own recording-upload API)
+ * Requests to `api/device/...` (the camera role's own recording-upload API)
  * use [SessionCache.deviceToken] instead of the controller role's
  * [SessionCache.accessToken] - both can be populated in the same process
  * since a single app build supports either role.

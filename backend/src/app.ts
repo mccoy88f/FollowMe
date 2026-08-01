@@ -16,7 +16,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(cors, { origin: env.corsOrigins });
 
   app.addContentTypeParser(
-    'application/octet-stream',
+    /^audio\/|^video\/|^application\/octet-stream$/,
     { parseAs: 'buffer' },
     (_req, body, done) => done(null, body as Buffer)
   );
